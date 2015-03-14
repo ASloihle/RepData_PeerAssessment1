@@ -1,25 +1,70 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
----
+## Peer Assesment Project 1 - Physical Activity Patterns
+
+The data used for this analysis come from recordings made by a personal activity monitor. Activity monitors are bracelets or small clip-on devices worn on the person that measure and record certain data, such as number of steps taken, distance traveled, calories burned, etc. They are most commonly used by fitness enthusiasts who want to use technology to improve their performance, or by average people who use the device to monitor and increase their physical activity. This analysis is looking specifically at the number of steps taken in 5-minute intervals. 
+
+To begin, we will load in the data. 
+```{r}  
+setwd("C:/Users/Aspen_2/Downloads")
+actdata <- read.csv("activity.csv")
+```
+Next, we will create a new dataset called "acttotal", which uses the "aggregate" function to calculate the total number of steps taken for each full day. In addition, we will create more friendly names for the rows of this data frame. We will also create a histogram to visually illustrate the distribution of this data. For now, we will ignore the NA values in the dataset. The data is named "actdata".
+```{r}
+acttotal <- aggregate(as.numeric(actdata$steps) ~ actdata$date, FUN = sum)
+names(acttotal) <- c("date", "steps")
+hist(acttotal$steps, xlab = "steps", ylab = "frequency", main = "Total Steps Taken Per Day")
+```
+The mean and median of this data set will be calculated as well.
+```{r}
+mean(acttotal$steps)
+
+median(acttotal$steps)
+```
+The mean number of steps taken per day is 10766.19 and the median steps taken per day is 10765.
+
+Next, we want to look at the average number of steps taken per day. This is also done using the "aggregate" function, but we will use "mean" instead of "sum". This data will also be put into a new dataset called "tiavg", and we will again add more friendly names. We are still ignoring NAs at this point. 
+
+```{r}
+tiavg <- aggregate(as.numeric(actdata$steps) ~ actdata$interval, FUN = mean)
+names(tiavg) <- c("interval", "avgsteps")
+```
+We will plot this new data in a time series plot, using the "type = l" argument to visualize the data over time. 
+```{r}
+plot(tiavg, type = "l")
+```
+
+We will also calculate which 5-minute interval has the highest average activity level.
+```{r}
+tiavg[tiavg$avgsteps == max(tiavg$avgsteps), ]
+```
+On average, 8:35am has the highest activity level, with a mean of 206 steps being taken. 
+
+Now, we will address the NAs in the dataset. To do this, we will replace each NA value with the average number of steps taken for the 5-minute interval that the NA value falls into. To do this, we will merge the original dataset ("actdata") and the dataset with the average activity levels ("tiavg"). This data set is called "nasub". Then, we will replace the NAs with the corresponding average value.
+
+```{r} 
+nasub <- merge(actdata, tiavg)
+  
+nasub$steps[is.na(nasub$steps) == TRUE] <- nasub$avgsteps[is.na(nasub$steps) == TRUE]
+```
+To determine the difference in activity levels between weekends and weekdays, we will first convert "date" in the "nasub" dataset to the Date format, and use the "weekdays" function to assign a day of the week ("Monday", "Tuesday", etc.) to each date in the data set, and put this into a new variable called "isweekend". To begin with, each day is assigned a "weekday" value, but we then assign a "weekend" value to Saturday and Sunday.
+
+```{r}
+nasub$date <- as.Date(nasub$date)
+
+nasub$weekday <- weekdays(nasub$date)
+nasub$isweekend <- "weekday"
+nasub$isweekend[nasub$weekday %in% c("Saturday", "Sunday")] <- "weekend"
+```
+Finally, we will make plots for the weekend and weekday variables. 
+```{r}
+plot.new()
+par(mfrow = c(1,2))
+plot(nasub$interval[nasub$weekday %in% c("Saturday", "Sunday")], nasub$steps[nasub$weekday %in% c("Saturday", "Sunday")], type = "l", main = "Weekend Activity", xlab = "5 Minute Interval", ylab = "Steps Taken")
+
+plot(nasub$interval[nasub$weekday %in% c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday")], nasub$steps[nasub$weekday %in% c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday")], type = "l", main = "Weekday Activity", xlab = "5 Minute Interval", ylab = "Steps Taken")
+```
+The plots show that there is a marked difference between weekend and weekday activity levels. On weekdays, most activity happens in the morning and then goes down from there. On weekends, activities levels are lower in the morning, and then increase in the afternoon. 
 
 
-## Loading and preprocessing the data
 
 
 
-## What is mean total number of steps taken per day?
-
-
-
-## What is the average daily activity pattern?
-
-
-
-## Imputing missing values
-
-
-
-## Are there differences in activity patterns between weekdays and weekends?
